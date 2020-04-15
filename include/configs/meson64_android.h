@@ -29,7 +29,7 @@
 	"name=vbmeta_b,size=512K,uuid=${uuid_gpt_vbmeta_b};" \
 	"name=boot_a,size=64M,bootable,uuid=${uuid_gpt_boot_a};" \
 	"name=boot_b,size=64M,bootable,uuid=${uuid_gpt_boot_b};" \
-	"name=super,size=3072M,uuid=${uuid_gpt_super};"	\
+	"name=super,size=4608M,uuid=${uuid_gpt_super};"	\
 	"name=metadata,size=16M,bootable,uuid=${uuid_gpt_metadata};" \
 	"name=userdata,size=-,uuid=${uuid_gpt_userdata};"
 #else
@@ -43,7 +43,7 @@
 	"name=boot,size=64M,bootable,uuid=${uuid_gpt_boot};" \
 	"name=recovery,size=64M,uuid=${uuid_gpt_recovery};"	\
 	"name=cache,size=256M,uuid=${uuid_gpt_cache};" \
-	"name=super,size=1792M,uuid=${uuid_gpt_super};"	\
+	"name=super,size=2304M,uuid=${uuid_gpt_super};"	\
 	"name=metadata,size=16M,bootable,uuid=${uuid_gpt_metadata};" \
 	"name=userdata,size=-,uuid=${uuid_gpt_userdata};"
 #endif
