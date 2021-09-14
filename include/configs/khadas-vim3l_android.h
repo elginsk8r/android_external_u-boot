@@ -45,7 +45,7 @@
 	"bootcmd=bootflow scan\0"                                     \
 	"adtb_idx=0\0"                                                \
 	"partitions=" PARTS_DEFAULT "\0"                              \
-	"mmcdev=2\0"                                                  \
+	"mmcdev=" __stringify(CONFIG_FASTBOOT_FLASH_MMC_DEV) "\0"     \
 	"fastboot_raw_partition_bootloader=0x1 0xfff mmcpart 1\0"     \
 	"fastboot_raw_partition_bootenv=0x0 0xfff mmcpart 2\0"        \
 	"stdin=" STDIN_CFG "\0"                                       \
