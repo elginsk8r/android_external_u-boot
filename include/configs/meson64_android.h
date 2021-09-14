@@ -111,6 +111,9 @@
 	"elif test $board_name = vim3; then " \
 		"echo \"  Reading DTB for vim3...\"; " \
 		"setenv dtb_index 3;" \
+	"elif test $board_name = odroidn2; then " \
+		"echo \"  Reading DTB for odroidn2...\"; " \
+		"setenv dtb_index 4;" \
 	"else " \
 		"echo Error: Android boot is not supported for $board_name; " \
 		"exit; " \
@@ -130,6 +133,9 @@
 	"elif test $board_name = vim3; then " \
 		"echo \"  Reading DTBO for vim3...\"; " \
 		"setenv dtbo_index 3;" \
+	"elif test $board_name = odroidn2; then " \
+		"echo \"  Reading DTBO for odroidn2...\"; " \
+		"setenv dtbo_index 4;" \
 	"else " \
 		"echo Error: Android boot is not supported for $board_name; " \
 		"exit; " \
