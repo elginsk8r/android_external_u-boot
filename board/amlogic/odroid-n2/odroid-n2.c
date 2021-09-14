@@ -109,6 +109,7 @@ int misc_init_r(void)
 {
 	u8 mac_addr[MAC_ADDR_LEN];
 	char efuse_mac_addr[EFUSE_MAC_SIZE], tmp[3];
+	char serial_string[EFUSE_MAC_SIZE];
 	ssize_t len;
 
 	if (IS_ENABLED(CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG) &&
@@ -133,6 +134,12 @@ int misc_init_r(void)
 			eth_env_set_enetaddr("ethaddr", mac_addr);
 		else
 			meson_generate_serial_ethaddr();
+	}
+
+	if (!env_get("serial#")) {
+		sprintf(serial_string, "%02X%02X%02X%02X%02X%02X", mac_addr[0],
+			mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+		env_set("serial#", serial_string);
 	}
 
 	odroid_detect_variant();
