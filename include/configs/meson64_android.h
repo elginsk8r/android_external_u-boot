@@ -289,7 +289,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS                                     \
 	EXTRA_ANDROID_ENV_SETTINGS                                    \
 	"partitions=" PARTS_DEFAULT "\0"                              \
-	"mmcdev=2\0"                                                  \
+	"mmcdev=" __stringify(CONFIG_FASTBOOT_FLASH_MMC_DEV) "\0"     \
 	ANDROIDBOOT_GET_CURRENT_SLOT_CMD                              \
 	AVB_VERIFY_CMD                                                \
 	"force_avb=0\0"                                               \
