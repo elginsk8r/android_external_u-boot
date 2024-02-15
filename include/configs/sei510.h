@@ -10,7 +10,6 @@
 #define __CONFIG_H
 
 #define LOGO_UUID "43a3305d-150f-4cc9-bd3b-38fca8693846;"
-#define ROOT_UUID "ddb8c3f6-d94d-4394-b633-3134139cc2e0;"
 
 #define PARTS_DEFAULT \
 	"uuid_disk=${uuid_gpt_disk};" \
@@ -22,8 +21,7 @@
 	"name=recovery,size=32M,uuid=${uuid_gpt_recovery};" \
 	"name=cache,size=256M,uuid=${uuid_gpt_cache};" \
 	"name=super,size=1792M,uuid=${uuid_gpt_super};" \
-	"name=userdata,size=5332M,uuid=${uuid_gpt_userdata};" \
-	"name=rootfs,size=-,uuid=" ROOT_UUID
+	"name=userdata,size=-,uuid=${uuid_gpt_userdata};"
 
 #include <configs/meson64_android.h>
 
