@@ -208,6 +208,16 @@ static int configure_bootloader_version(struct bootflow *bflow)
 					PLAIN_VERSION, false);
 }
 
+static int configure_dtbo_idx(struct bootflow *bflow)
+{
+	char *adtbo_idx = env_get("adtbo_idx");
+
+	if (!adtbo_idx)
+		return log_msg_ret("dtbo", -ENOENT);
+
+	return bootflow_cmdline_set_arg(bflow, "androidboot.dtbo_idx", adtbo_idx, false);
+}
+
 static int android_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 {
 	struct blk_desc *desc = dev_get_uclass_plat(bflow->blk);
@@ -303,6 +313,7 @@ static int android_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 	 */
 	configure_serialno(bflow);
 	configure_bootloader_version(bflow);
+	configure_dtbo_idx(bflow);
 
 	if (priv->boot_mode == ANDROID_BOOT_MODE_NORMAL && priv->slot) {
 		ret = bootflow_cmdline_set_arg(bflow, "androidboot.force_normal_boot",
@@ -550,6 +561,7 @@ static int boot_android_normal(struct bootflow *bflow)
 	int ret;
 	ulong loadaddr = env_get_hex("loadaddr", 0);
 	ulong vloadaddr = env_get_hex("vendor_boot_comp_addr_r", 0);
+	ulong fdtoverlay_addr_r = env_get_hex("fdtoverlay_addr_r", 0);
 
 	ret = run_avb_verification(bflow);
 	if (ret < 0)
@@ -580,6 +592,11 @@ static int boot_android_normal(struct bootflow *bflow)
 	ret = append_bootargs_to_cmdline(bflow);
 	if (ret < 0)
 		return log_msg_ret("bootargs append", ret);
+
+	ret = read_slotted_partition(desc, "dtbo", priv->slot, 0,
+				     fdtoverlay_addr_r);
+	if (ret < 0)
+		return log_msg_ret("read dtbo", ret);
 
 	ret = bootm_boot_start(loadaddr, bflow->cmdline);
 
