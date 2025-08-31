@@ -9,6 +9,7 @@
 #ifndef __MESON64_ANDROID_CONFIG_H
 #define __MESON64_ANDROID_CONFIG_H
 
+#include <version.h>
 #include <linux/sizes.h>
 
 #ifndef LOGO_UUID
@@ -123,6 +124,13 @@
 #define AB_BOOTARGS " "
 #define RECOVERY_PARTITION "recovery"
 #endif
+
+#define PREPARE_BOOTARGS \
+	"setenv bootargs ${bootargs} androidboot.serialno=${serial#};" \
+	"setenv bootargs ${bootargs} androidboot.bootloader=" PLAIN_VERSION ";" \
+	AB_SELECT_SLOT \
+	AB_SELECT_ARGS \
+	AVB_VERIFY_CHECK
 
 #if defined(CONFIG_CMD_ABOOTIMG)
 /*
@@ -272,10 +280,7 @@
 		"if test \"${run_recovery}\" -eq 1; then " \
 			"echo Running Recovery...;" \
 			"mmc dev ${mmcdev};" \
-			"setenv bootargs \"${bootargs} androidboot.serialno=${serial#}\";" \
-			AB_SELECT_SLOT \
-			AB_SELECT_ARGS \
-			AVB_VERIFY_CHECK \
+			PREPARE_BOOTARGS \
 			"part start mmc ${mmcdev} " RECOVERY_PARTITION "${slot_suffix} boot_start;" \
 			"part size mmc ${mmcdev} " RECOVERY_PARTITION "${slot_suffix} boot_size;" \
 			"if mmc read ${loadaddr} ${boot_start} ${boot_size}; then " \
@@ -294,10 +299,7 @@
 	"bootcmd_system=" \
 		"echo Loading Android " BOOT_PARTITION " partition...;" \
 		"mmc dev ${mmcdev};" \
-		"setenv bootargs ${bootargs} androidboot.serialno=${serial#};" \
-		AB_SELECT_SLOT \
-		AB_SELECT_ARGS \
-		AVB_VERIFY_CHECK \
+		PREPARE_BOOTARGS \
 		"part start mmc ${mmcdev} " BOOT_PARTITION "${slot_suffix} boot_start;" \
 		"part size mmc ${mmcdev} " BOOT_PARTITION "${slot_suffix} boot_size;" \
 		"if mmc read ${loadaddr} ${boot_start} ${boot_size}; then " \
