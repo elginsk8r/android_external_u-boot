@@ -503,6 +503,110 @@ ulong android_image_get_kcomp(const void *hdr,
 		return image_decomp_type(p, sizeof(u32));
 }
 
+static u32 android_image_set_bootconfig(const void *hdr, const void *vendor_boot_img, ulong ramdisk_ptr)
+{
+	/* Extract androidboot.* parameters from bootargs */
+	const char *bootargs = env_get("bootargs");
+	char *androidboot_params = NULL;
+	char *new_bootargs = NULL;
+	size_t androidboot_params_len = 0;
+	struct andr_image_data img_data;
+	u32 bytes_added = 0;
+
+	if (!android_image_get_data(hdr, vendor_boot_img, &img_data))
+		return 0;
+
+	if (bootargs && img_data.bootconfig_size) {
+		size_t len = strlen(bootargs);
+
+		androidboot_params = malloc(len + 1);
+		new_bootargs = malloc(len + 1);
+		if (!androidboot_params || !new_bootargs) {
+			free(androidboot_params);
+			free(new_bootargs);
+			printf("Error: malloc failed\n");
+			return -ENOMEM;
+		}
+
+		/* Extract androidboot.* and build new bootargs in one pass */
+		const char *src = bootargs;
+		char *bc_dst = androidboot_params;
+		char *args_dst = new_bootargs;
+
+		while (*src) {
+			/* Skip leading spaces */
+			while (*src == ' ')
+				src++;
+			if (!*src)
+				break;
+
+			/* Check if this param starts with androidboot. */
+			if (strncmp(src, "androidboot.", 12) == 0) {
+				/* Copy to bootconfig (add newline if not first) */
+				if (bc_dst != androidboot_params)
+					*bc_dst++ = '\n';
+				while (*src && *src != ' ')
+					*bc_dst++ = *src++;
+			} else {
+				/* Copy to new bootargs (add space if not first) */
+				if (args_dst != new_bootargs)
+					*args_dst++ = ' ';
+				while (*src && *src != ' ')
+					*args_dst++ = *src++;
+			}
+		}
+
+		*bc_dst++ = '\n'; /* Final newline for bootconfig */
+		*bc_dst = '\0';
+		*args_dst = '\0';
+		androidboot_params_len = bc_dst - androidboot_params;
+
+		/* Update bootargs if we extracted any androidboot params */
+		if (androidboot_params_len > 1)
+			env_set("bootargs", new_bootargs);
+	}
+
+	/* Map addresses for memcpy operations */
+	void *ramdisk_dest = map_sysmem(ramdisk_ptr, img_data.ramdisk_size);
+	void *vendor_ramdisk_src =
+		map_sysmem(img_data.vendor_ramdisk_ptr, img_data.vendor_ramdisk_size);
+	void *boot_ramdisk_src =
+		map_sysmem(img_data.ramdisk_ptr, img_data.boot_ramdisk_size);
+
+	memcpy(ramdisk_dest, vendor_ramdisk_src, img_data.vendor_ramdisk_size);
+	memcpy((char *)ramdisk_dest + img_data.vendor_ramdisk_size, boot_ramdisk_src,
+	       img_data.boot_ramdisk_size);
+
+	if (img_data.bootconfig_size) {
+		void *bootconfig_src =
+			map_sysmem(img_data.bootconfig_addr, img_data.bootconfig_size);
+		memcpy((char *)ramdisk_dest + img_data.vendor_ramdisk_size +
+			img_data.boot_ramdisk_size,
+		bootconfig_src, img_data.bootconfig_size);
+		unmap_sysmem(bootconfig_src);
+
+		/* Add androidboot.* parameters to bootconfig */
+		if (androidboot_params && androidboot_params_len > 1) {
+			ulong bootconfig_ptr = (ulong)ramdisk_dest +
+					img_data.vendor_ramdisk_size +
+					img_data.boot_ramdisk_size;
+			bytes_added =
+				add_bootconfig_parameters(androidboot_params,
+							  androidboot_params_len,
+							  bootconfig_ptr,
+							  img_data.bootconfig_size);
+		}
+	}
+
+	free(androidboot_params);
+	free(new_bootargs);
+
+	unmap_sysmem(boot_ramdisk_src);
+	unmap_sysmem(vendor_ramdisk_src);
+	unmap_sysmem(ramdisk_dest);
+	return bytes_added;
+}
+
 int android_image_get_ramdisk(const void *hdr, const void *vendor_boot_img,
 			      ulong *rd_data, ulong *rd_len)
 {
@@ -534,17 +638,9 @@ int android_image_get_ramdisk(const void *hdr, const void *vendor_boot_img,
 			ramdisk_ptr = img_data.ramdisk_addr;
 		}
 		*rd_data = ramdisk_ptr;
-		memcpy((void *)(ramdisk_ptr), (void *)img_data.vendor_ramdisk_ptr,
-		       img_data.vendor_ramdisk_size);
-		ramdisk_ptr += img_data.vendor_ramdisk_size;
-		memcpy((void *)(ramdisk_ptr), (void *)img_data.ramdisk_ptr,
-		       img_data.boot_ramdisk_size);
-		ramdisk_ptr += img_data.boot_ramdisk_size;
-		if (img_data.bootconfig_size) {
-			memcpy((void *)
-			       (ramdisk_ptr), (void *)img_data.bootconfig_addr,
-			       img_data.bootconfig_size);
-		}
+		if (img_data.header_version > 3)
+			img_data.ramdisk_size +=
+				android_image_set_bootconfig(hdr, vendor_boot_img, ramdisk_ptr);
 	} else {
 		/* Ramdisk can be used in-place, use current ptr */
 		if (img_data.ramdisk_addr == 0 ||
